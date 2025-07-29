@@ -1,0 +1,32 @@
+{
+  "name": "lib.deadlight",
+  "version": "0.1.0",
+  "description": "Core utilities for the Deadlight ecosystem",
+  "main": "src/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./auth": "./src/auth/index.js",
+    "./db": "./src/db/index.js",
+    "./config": "./src/config/index.js",
+    "./logging": "./src/logging/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/**/*.test.js",
+    "lint": "eslint src/",
+    "build": "echo 'Pure ES modules, no build step needed'"
+  },
+  "keywords": [
+    "deadlight",
+    "auth",
+    "jwt",
+    "edge",
+    "cloudflare"
+  ],
+  "author": "Thatch",
+  "license": "MIT",
+  "dependencies": {
+    "marked": "^16.1.1",
+    "xss": "^1.0.15"
+  }
+}
