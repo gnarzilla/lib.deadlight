@@ -1,4 +1,6 @@
 // core/src/auth/password.js
+import { verifyJWT } from './jwt.js';
+
 export async function hashPassword(password, options = {}) {
   const encoder = new TextEncoder();
   const iterations = options.iterations || 100000;

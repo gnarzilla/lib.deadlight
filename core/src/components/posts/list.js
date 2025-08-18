@@ -1,5 +1,6 @@
 // lib.deadlight/core/src/components/posts/list.js
 import { MarkdownProcessor } from '../../markdown/index.js';
+import { renderAuthorLink } from '../../utils/templates.js';
 
 export class PostList {
   constructor(options = {}) {
@@ -43,7 +44,7 @@ export class PostList {
     const parts = [];
     
     if (this.showAuthor && post.author_username) {
-      parts.push(`By ${post.author_username}`);
+      parts.push(`By ${renderAuthorLink(post.author_username)}`);
     }
     
     if (this.showDate && post.created_at) {

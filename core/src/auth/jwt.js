@@ -1,4 +1,6 @@
 // core/src/auth/jwt.js
+import { JWTError } from './errors.js'
+
 function base64UrlEncode(arrayBuffer) {
   const uint8Array = new Uint8Array(arrayBuffer);
   let base64String = '';
