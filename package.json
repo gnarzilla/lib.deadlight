@@ -26,7 +26,7 @@
   "author": "Thatch",
   "license": "MIT",
   "dependencies": {
-    "marked": "^16.1.1",
+    "marked": "^16.2.0",
     "xss": "^1.0.15"
   }
 }

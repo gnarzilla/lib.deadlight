@@ -2,7 +2,21 @@
 
 A modular, edge-native library providing authentication, database models, UI components, and core utilities for the Deadlight ecosystem of applications.
 
-## 🌟 Overview
+
+### Table of Contents
+1.  [Overview](#overview)
+2.  [Current Status](#current-status)
+3.  [Features](#core-features)
+4.  [Architecture](#architecture)
+6.  [Installation](#installation)
+7.  [Usage Examples](#usage-examples)
+8.  [Roadmap](#roadmap)
+9.  [License](#license)
+10.  [Documentation](#detailed-documentation) 
+
+---
+
+##  Overview
 
 lib.deadlight is the foundational shared library that powers the entire Deadlight ecosystem, including:
 - **blog.deadlight** - Minimalist blog platform
@@ -11,39 +25,39 @@ lib.deadlight is the foundational shared library that powers the entire Deadligh
 
 Built for Cloudflare Workers, this library ensures consistency, security, and code reuse across all Deadlight applications.
 
-## ✅ Current Status
+## Current Status
 
-### Production-Ready Modules
+Production-Ready Modules
 
-#### 🔐 **Authentication (`/core/src/auth/`)**
+####  **Authentication (`/core/src/auth/`)**
 - JWT token generation and validation
 - Secure password hashing with salt
 - User session management
 - Role-based access control
 
-#### 📊 **Database (`/core/src/db/`)**
+####  **Database (`/core/src/db/`)**
 - Base model class with error handling
 - D1 database integration
 - Models: User, Post, Settings
 - Migration support
 
-#### 📝 **Logging (`/core/src/logging/`)**
+####  **Logging (`/core/src/logging/`)**
 - Structured logging with contexts
 - Multiple log levels
 - Cloudflare Workers compatible
 
-#### 🎨 **Markdown Processing (`/core/src/markdown/`)**
+####  **Markdown Processing (`/core/src/markdown/`)**
 - Full markdown support with marked.js
 - XSS protection via sanitization
 - Custom excerpt extraction
 - Manual excerpt markers (`<!--more-->`)
 
-#### 🧩 **Components (`/core/src/components/`)**
+####  **Components (`/core/src/components/`)**
 - **Posts**: List view, pagination, containers
 - Reusable across blog and email contexts
 - Theme-aware styling
 
-## 📦 Installation
+##  Installation
 
 ```bash
 # Clone the repository
@@ -65,7 +79,7 @@ cd ../your-project
 npm link @deadlight/core
 ```
 
-## 🚀 Usage Examples
+##  Usage Examples
 
 ### Authentication
 ```javascript
@@ -136,7 +150,7 @@ const postList = new PostList({
 const html = postList.render(posts, { user });
 ```
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 lib.deadlight/
@@ -149,7 +163,7 @@ lib.deadlight/
 │       └── posts/          # Post/content components
 ```
 
-## 🗺️ Roadmap
+##  Roadmap
 
 ### Phase 1: Security Hardening (Next Priority)
 - [ ] Rate limiting middleware
@@ -182,26 +196,14 @@ lib.deadlight/
 - [ ] GraphQL schema generation from models
 - [ ] Automated testing framework
 
-## 🛠️ Development
+##  Development
 
 ### Prerequisites
 - Node.js 16+
 - Cloudflare account
 - Wrangler CLI
 
-### Local Development
-```bash
-# Run tests (coming soon)
-npm test
-
-# Build
-npm run build
-
-# Link for local development
-npm link
-```
-
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please:
 1. Fork the repository
@@ -210,15 +212,9 @@ Contributions are welcome! Please:
 4. Add tests for new features
 5. Submit a pull request
 
-## 📄 License
+##  License
 
 MIT License - See LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- Built for the edge with Cloudflare Workers
-- Inspired by the need for a privacy-first, minimal web ecosystem
-- Special thanks to all contributors
 
 ---
 
