@@ -3,6 +3,11 @@ import { authLimiter, apiLimiter } from './ratelimit.js';
 import { securityHeaders } from './headers.js';
 
 export async function rateLimitMiddleware(request, env, ctx, next) {
+  // CHECK FOR DISABLE FLAG FIRST
+  if (env.DISABLE_RATE_LIMITING === 'true') {
+    return next();
+  }
+  
   const url = new URL(request.url);
   
   // Choose limiter based on path

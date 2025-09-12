@@ -1,12 +1,18 @@
 // lib.deadlight/core/src/security/ratelimit.js
 export class RateLimiter {
   constructor(options = {}) {
-    this.windowMs = options.windowMs || 60000; // 1 minute
-    this.maxRequests = options.maxRequests || 10;
-    this.keyPrefix = options.keyPrefix || 'rl:';
+      this.windowMs = options.windowMs || 60000; // 1 minute
+      this.maxRequests = options.maxRequests || 10;
+      this.keyPrefix = options.keyPrefix || 'rl:';
   }
-
   async isAllowed(request, env, identifier) {
+    if (!env.RATE_LIMIT || env.DISABLE_RATE_LIMITING === 'true') {
+      return {
+        allowed: true,
+        remaining: 999,
+        resetAt: new Date(Date.now() + this.windowMs)
+      };
+    }
     const key = this.getKey(identifier || this.getIdentifier(request));
     const now = Date.now();
     const windowStart = now - this.windowMs;
