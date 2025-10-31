@@ -166,6 +166,23 @@ export class PostModel extends BaseModel {
     };
   }
 
+  async list({ limit = 10, offset = 0, orderBy = 'created_at DESC', includeAuthor = false, publishedOnly = false } = {}) {
+    // Parse orderBy string
+    const [column, direction = 'DESC'] = orderBy.split(' ');
+    
+    // Use getPaginated but return just the posts array
+    const result = await this.getPaginated({
+      page: 1,
+      limit,
+      includeAuthor,
+      orderBy: column,
+      orderDirection: direction,
+      publishedOnly
+    });
+    
+    return result.posts;
+  }
+
   async getNavigation(currentId, publishedOnly = true) {
     const whereClause = publishedOnly ? ' AND published = 1' : '';
     
@@ -204,6 +221,15 @@ export class PostModel extends BaseModel {
     const whereClause = publishedOnly ? ' WHERE published = 1' : '';
     const result = await this.queryFirst(`SELECT COUNT(*) as total FROM posts${whereClause}`);
     return result.total;
+  }
+
+  async countToday() {
+    const result = await this.queryFirst(`
+      SELECT COUNT(*) as total 
+      FROM posts 
+      WHERE date(created_at) = date('now')
+    `);
+    return result.total || 0;
   }
 
   async togglePublished(id) {

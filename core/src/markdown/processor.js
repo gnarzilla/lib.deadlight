@@ -36,11 +36,15 @@ export class MarkdownProcessor {
     
     this.renderer = new marked.Renderer();
     
-    this.renderer.code = (code, language) => {
-      const codeString = String(code || '');
+    // Fixed code renderer - handle the marked token properly
+    this.renderer.code = (code, language, isEscaped) => {
+      // If code is an object (marked v4+ token), extract the text
+      const codeText = typeof code === 'object' && code !== null ? code.text : code;
+      const codeString = String(codeText || '');
       const lang = language || '';
       
-      const escapedCode = codeString
+      // Only escape if not already escaped
+      const escapedCode = isEscaped ? codeString : codeString
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -68,7 +72,7 @@ export class MarkdownProcessor {
       .replace(/#{1,6}\s/g, '') // Remove headers
       .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
       .replace(/\*(.+?)\*/g, '$1') // Remove italic
-      .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // Remove links, keep text
+      .replace(/$$(.*?)$$$(.*?)$/g, '$1') // Remove links, keep text
       .replace(/`(.+?)`/g, '$1') // Remove inline code
       .trim();
   }
