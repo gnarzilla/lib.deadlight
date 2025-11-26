@@ -11,7 +11,7 @@ export class PostModel extends BaseModel {
       .slice(0, 200);
   }
 
-  async create({ title, content, slug, excerpt, author_id, published = false }) {
+  async create({ title, content, slug, excerpt, author_id, published = false, visibility = 'public' }) {
     try {
       // Generate slug if not provided
       const finalSlug = slug || this.generateSlug(title);
@@ -21,12 +21,12 @@ export class PostModel extends BaseModel {
       if (existing) {
         // Append timestamp to make it unique
         const uniqueSlug = `${finalSlug}-${Date.now()}`;
-        return this.create({ title, content, slug: uniqueSlug, excerpt, author_id, published });
+        return this.create({ title, content, slug: uniqueSlug, excerpt, author_id, published, visibility });
       }
       
       const result = await this.execute(
-        'INSERT INTO posts (title, content, slug, excerpt, author_id, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-        [title, content, finalSlug, excerpt || null, author_id, published ? 1 : 0]
+        'INSERT INTO posts (title, content, slug, excerpt, author_id, published, created_at, updated_at, visibility) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)',
+        [title, content, finalSlug, excerpt || null, author_id, published ? 1 : 0, visibility]  // ← Add visibility here
       );
 
       return await this.getById(result.meta.last_row_id);
@@ -34,7 +34,6 @@ export class PostModel extends BaseModel {
       throw new DatabaseError(`Failed to create post: ${error.message}`, 'CREATE_ERROR');
     }
   }
-
   async getById(id, options = {}) {
     let query = 'SELECT posts.*';
     if (options.includeAuthor) {
@@ -63,48 +62,62 @@ export class PostModel extends BaseModel {
     return await this.queryFirst(query, [slug]);
   }
 
-  async update(id, { title, content, slug, excerpt, published }) {
-    const updates = [];
-    const values = [];
-    
-    if (title !== undefined) {
-      updates.push('title = ?');
-      values.push(title);
+  async update(id, { title, content, slug, excerpt, published, visibility, pinned }) {
+    try {
+      let updates = [];
+      let values = [];
+
+      if (title !== undefined) {
+        updates.push('title = ?');
+        values.push(title);
+      }
+      if (content !== undefined) {
+        updates.push('content = ?');
+        values.push(content);
+      }
+      if (slug !== undefined) {
+        // Generate new slug if title changed and slug is empty
+        const finalSlug = slug || this.generateSlug(title);
+        // Add unique check logic here if necessary
+        updates.push('slug = ?');
+        values.push(finalSlug);
+      }
+      if (excerpt !== undefined) {
+        updates.push('excerpt = ?');
+        values.push(excerpt);
+      }
+      if (published !== undefined) {
+        updates.push('published = ?');
+        values.push(published ? 1 : 0);
+      }
+      
+      // 🚨 ADD: Visibility update
+      if (visibility !== undefined) {
+        updates.push('visibility = ?');
+        values.push(visibility);
+      }
+
+      // 🚨 ADD: Pinned update (for future implementation)
+      if (pinned !== undefined) {
+        updates.push('pinned = ?');
+        values.push(pinned ? 1 : 0);
+      }
+
+      if (updates.length === 0) {
+        return await this.getById(id);
+      }
+
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+
+      const updateQuery = `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`;
+      values.push(id);
+
+      await this.execute(updateQuery, values);
+
+      return await this.getById(id);
+    } catch (error) {
+      throw new DatabaseError(`Failed to update post: ${error.message}`);
     }
-    if (content !== undefined) {
-      updates.push('content = ?');
-      values.push(content);
-    }
-    if (slug !== undefined) {
-      updates.push('slug = ?');
-      values.push(slug);
-    }
-    if (excerpt !== undefined) {
-      updates.push('excerpt = ?');
-      values.push(excerpt);
-    }
-    if (published !== undefined) {
-      updates.push('published = ?');
-      values.push(published ? 1 : 0);
-    }
-    
-    if (updates.length === 0) {
-      throw new DatabaseError('No fields to update', 'INVALID_UPDATE');
-    }
-    
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(id);
-    
-    const result = await this.execute(
-      `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
-    
-    if (result.changes === 0) {
-      throw new DatabaseError('Post not found', 'NOT_FOUND');
-    }
-    
-    return await this.getById(id);
   }
 
   async delete(id) {
@@ -117,66 +130,122 @@ export class PostModel extends BaseModel {
     return { success: true };
   }
 
-  async getPaginated({ 
-    page = 1, 
-    limit = 10, 
-    includeAuthor = false, 
-    orderBy = 'created_at', 
-    orderDirection = 'DESC',
-    publishedOnly = true 
-  }) {
+  async getPaginated(options = {}) {
+    const { 
+      page = 1,
+      limit = 10,
+      publishedOnly = true, 
+      postType = 'blog', 
+      visibility = 'public',
+      authorId = null,
+      tagId = null,
+      orderBy = 'created_at',
+      orderDirection = 'DESC',
+      includeAuthor = false
+    } = options;
+
     const offset = (page - 1) * limit;
+
+    let whereClauses = [];
+    let values = [];
+
+    // Base filters
+    if (publishedOnly) {
+      whereClauses.push('posts.published = 1');
+    }
+    whereClauses.push('posts.post_type = ?');
+    values.push(postType);
     
-    // Build where clause
-    const whereClause = publishedOnly ? ' WHERE posts.published = 1' : '';
+    // Visibility filter
+    if (visibility) {
+      whereClauses.push('posts.visibility = ?');
+      values.push(visibility);
+    }
     
+    // Author filter
+    if (authorId) {
+      whereClauses.push('posts.author_id = ?');
+      values.push(authorId);
+    }
+
+    // Tag filtering
+    let joins = '';
+    if (tagId) {
+      joins += ' LEFT JOIN post_tags ON posts.id = post_tags.post_id';
+      whereClauses.push('post_tags.tag_id = ?');
+      values.push(tagId);
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    // Build ORDER BY clause
+    let orderByClause;
+    if (orderBy === 'karma') {
+      orderByClause = `(
+        SELECT COUNT(*) FROM post_reactions WHERE post_id = posts.id AND reaction = 'like'
+      ) - (
+        SELECT COUNT(*) FROM post_reactions WHERE post_id = posts.id AND reaction = 'dislike'
+      ) ${orderDirection}`;
+    } else {
+      // Sanitize column name to prevent SQL injection
+      const allowedColumns = ['created_at', 'updated_at', 'title', 'id'];
+      const safeOrderBy = allowedColumns.includes(orderBy) ? orderBy : 'created_at';
+      orderByClause = `posts.${safeOrderBy} ${orderDirection}`;
+    }
+
+    // Build SELECT clause
+    let selectClause = 'posts.*';
+    if (includeAuthor) {
+      selectClause += ', users.username as author_username';
+    }
+    selectClause += `, (
+      SELECT COUNT(*) FROM post_reactions WHERE post_id = posts.id AND reaction = 'like'
+    ) - (
+      SELECT COUNT(*) FROM post_reactions WHERE post_id = posts.id AND reaction = 'dislike'
+    ) AS karma`;
+
+    const query = `
+      SELECT ${selectClause}
+      FROM posts
+      ${includeAuthor ? 'LEFT JOIN users ON posts.author_id = users.id' : ''}
+      ${joins}
+      ${whereString}
+      ORDER BY ${orderByClause}
+      LIMIT ? OFFSET ?
+    `;
+
+    values.push(limit, offset);
+
+    const posts = await this.query(query, values);
+
     // Get total count
-    const countResult = await this.queryFirst(`SELECT COUNT(*) as total FROM posts${whereClause}`);
-    const totalPosts = countResult.total;
-    const totalPages = Math.ceil(totalPosts / limit);
-    
-    // Build query
-    let query = 'SELECT posts.*';
-    if (includeAuthor) {
-      query += ', users.username as author_username';
-    }
-    query += ' FROM posts';
-    if (includeAuthor) {
-      query += ' LEFT JOIN users ON posts.author_id = users.id';
-    }
-    query += whereClause;
-    query += ` ORDER BY posts.${orderBy} ${orderDirection} LIMIT ? OFFSET ?`;
-    
-    const result = await this.query(query, [limit, offset]);
-    
-    const pagination = {
-      currentPage: page,
-      totalPages,
-      totalPosts,
-      postsPerPage: limit,
-      hasPrevious: page > 1,
-      hasNext: page < totalPages,
-      previousPage: page - 1,
-      nextPage: page + 1
-    };
-    
+    const countQuery = `
+      SELECT COUNT(DISTINCT posts.id) as total 
+      FROM posts
+      ${joins}
+      ${whereString}
+    `;
+    const countResult = await this.queryFirst(countQuery, values.slice(0, -2));
+
     return {
-      posts: result.results || result,
-      pagination
+      posts,
+      totalCount: countResult.total,
+      currentPage: page,
+      totalPages: Math.ceil(countResult.total / limit),
+      hasNextPage: page < Math.ceil(countResult.total / limit),
+      hasPrevPage: page > 1
     };
   }
 
-  async list({ limit = 10, offset = 0, orderBy = 'created_at DESC', includeAuthor = false, publishedOnly = false } = {}) {
-    // Parse orderBy string
-    const [column, direction = 'DESC'] = orderBy.split(' ');
+  async list({ limit = 10, offset = 0, orderBy = 'created_at', orderDirection = 'DESC', includeAuthor = false, publishedOnly = false } = {}) {
+    const page = Math.floor(offset / limit) + 1;
     
-    // Use getPaginated but return just the posts array
     const result = await this.getPaginated({
-      page: 1,
+      page,
       limit,
       includeAuthor,
-      orderBy: column,
-      orderDirection: direction,
+      orderBy,
+      orderDirection,
       publishedOnly
     });
     
@@ -243,5 +312,48 @@ export class PostModel extends BaseModel {
     }
     
     return await this.getById(id);
+  }
+
+  async recordReaction(postId, userId, reaction) {
+    if (reaction !== 'like' && reaction !== 'dislike') {
+      throw new Error('Invalid reaction type.');
+    }
+    
+    // Remove existing reaction if the user is submitting the opposite reaction,
+    // or if the user clicks the same reaction twice (to toggle it off).
+    const existing = await this.queryFirst(
+      'SELECT reaction FROM post_reactions WHERE post_id = ? AND user_id = ?', 
+      [postId, userId]
+    );
+
+    if (existing && existing.reaction === reaction) {
+        // User is toggling their existing vote off
+        await this.execute(
+            'DELETE FROM post_reactions WHERE post_id = ? AND user_id = ?',
+            [postId, userId]
+        );
+    } else {
+        // User is voting (inserting new or replacing opposite)
+        await this.execute(
+            'INSERT OR REPLACE INTO post_reactions (post_id, user_id, reaction, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+            [postId, userId, reaction]
+        );
+    }
+    return this.getKarma(postId);
+  }
+
+  /**
+   * Computes the current karma score for a single post.
+   * @param {number} postId
+   * @returns {number} The karma score (likes - dislikes)
+   */
+  async getKarma(postId) {
+    const result = await this.queryFirst(`
+      SELECT 
+        (SELECT COUNT(*) FROM post_reactions WHERE post_id = ? AND reaction = 'like') - 
+        (SELECT COUNT(*) FROM post_reactions WHERE post_id = ? AND reaction = 'dislike') AS karma
+    `, [postId, postId]);
+    
+    return result.karma || 0;
   }
 }

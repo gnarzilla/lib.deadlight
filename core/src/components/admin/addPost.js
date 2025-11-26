@@ -29,9 +29,14 @@ export function renderUserPostForm(user, config, error = null, post = null) {
         
         <div class="form-group">
           <label>
+            <input type="checkbox" name="visibility" value="public" 
+                   ${post?.visibility ? 'checked' : ''}>
+            Main Blog
+          </label>
+          <label>
             <input type="checkbox" name="publish" value="true" 
                    ${post?.published ? 'checked' : ''}>
-            Publish immediately (uncheck to save as draft)
+            Publish Immediately
           </label>
         </div>
         
@@ -88,6 +93,10 @@ Add <!--more--> to create a custom excerpt break point."></textarea>
           <label class="checkbox-label">
             <input type="checkbox" name="published" value="true" checked>
             <span>Publish immediately</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="visibility" value="private">
+            <span>Publish to Profile Only</span>
           </label>
         </div>
         

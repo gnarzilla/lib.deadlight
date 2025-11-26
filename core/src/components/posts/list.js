@@ -56,13 +56,17 @@ export class PostList {
       : '';
   }
 
-  renderActions(post, baseUrl = '') {
-    return `
+  renderActions(post, options = {}) {
+    const { user } = options;
+    // Check if a user is logged in AND their role is 'admin'
+    if (!user || user.role !== 'admin') {
+      return '';
+    }
+
+    return html`
       <div class="post-actions">
-        <a href="${baseUrl}/admin/edit/${post.id}" class="button edit-button">Edit</a>
-        <form class="delete-link" action="${baseUrl}/admin/delete/${post.id}" method="POST" style="display: inline;">
-          <button type="submit" class="button delete-button">Delete</button>
-        </form>
+        <a href="/admin/edit/${post.id}" class="edit-button button button-sm">Edit</a>
+        <a href="/admin/delete/${post.id}" class="delete-button button button-sm">Delete</a>
       </div>
     `;
   }
