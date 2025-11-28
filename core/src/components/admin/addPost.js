@@ -27,16 +27,18 @@ export function renderUserPostForm(user, config, error = null, post = null) {
           </small>
         </div>
         
-        <div class="form-group">
-          <label>
-            <input type="checkbox" name="visibility" value="public" 
-                   ${post?.visibility ? 'checked' : ''}>
-            Main Blog
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="published" value="true" checked>
+            <span>Publish immediately</span>
           </label>
-          <label>
-            <input type="checkbox" name="publish" value="true" 
-                   ${post?.published ? 'checked' : ''}>
-            Publish Immediately
+          <label class="checkbox-label">
+            <input type="checkbox" name="private_visibility" value="true">
+            <span>Private (Profile Only)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="comments_enabled" value="true" checked>
+            <span>Enable Comments</span>
           </label>
         </div>
         

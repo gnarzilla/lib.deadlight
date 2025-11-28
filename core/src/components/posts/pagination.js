@@ -5,6 +5,41 @@ export class Pagination {
     this.baseUrl = options.baseUrl || '/';
   }
 
+  render(data) {
+    if (!data || data.totalPages <= 1) return '';
+
+    const { 
+      currentPage, 
+      totalPages, 
+      hasPrevious, 
+      hasNext,
+      extraParams = '' // Add support for extra parameters like sort
+    } = data;
+
+    // Build query string
+    const buildUrl = (page) => {
+      const params = [`page=${page}`];
+      if (extraParams) params.push(extraParams);
+      return `${this.baseUrl}?${params.join('&')}`;
+    };
+
+    let html = '<div class="pagination">';
+    
+    if (hasPrevious) {
+      html += `<a href="${buildUrl(currentPage - 1)}" class="pagination-prev">← Previous</a>`;
+    }
+    
+    html += `<span class="pagination-info">Page ${currentPage} of ${totalPages}</span>`;
+    
+    if (hasNext) {
+      html += `<a href="${buildUrl(currentPage + 1)}" class="pagination-next">Next →</a>`;
+    }
+    
+    html += '</div>';
+    
+    return html;
+  }
+
   render(pagination) {
     if (!pagination || pagination.totalPages <= 1) {
       return '';
