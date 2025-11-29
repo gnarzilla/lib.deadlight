@@ -12,9 +12,9 @@ export class PostList {
     this.showUpvote = options.showUpvote !== false; 
     this.excerptLength = options.excerptLength || 300;
   }
-
+  
   renderMeta(post, options = {}) {
-    const { user, csrfToken } = options;
+    const { user, csrfToken } = options;  
     const parts = [];
     
     if (this.showAuthor && post.author_username) {
@@ -50,7 +50,6 @@ export class PostList {
       : '';
   }
 
-  // Update render method
   render(posts = [], options = {}) {
     const { user = null, baseUrl = '', csrfToken = null } = options;
     
@@ -61,9 +60,8 @@ export class PostList {
     return posts.map(post => this.renderPost(post, { user, baseUrl, csrfToken })).join('\n');
   }
 
-  // Update renderPost
   renderPost(post, options = {}) {
-    const { user, baseUrl = '', csrfToken } = options;
+    const { user, baseUrl = '', csrfToken } = options; 
     const excerpt = this.markdown.extractExcerpt(post.content, this.excerptLength);
     const hasMore = this.markdown.hasMore(post.content, this.excerptLength);
     
@@ -81,46 +79,6 @@ export class PostList {
       </article>
     `;
   }
-  renderMeta(post) {
-    const parts = [];
-    
-    if (this.showAuthor && post.author_username) {
-      parts.push(`By ${renderAuthorLink(post.author_username)}`);
-    }
-    
-    if (this.showDate && post.created_at) {
-      parts.push(new Date(post.created_at).toLocaleDateString());
-    }
-    
-    if (this.showKarma && post.karma !== undefined) {
-      const userReaction = post.user_reaction; // Pass this from query
-      
-      const karmaDisplay = `
-        <div class="karma-controls">
-          <form method="POST" action="/api/posts/${post.id}/upvote" style="display: inline;">
-            <button type="submit" class="karma-button ${userReaction === 'like' ? 'active' : ''}" title="Upvote">
-              ↑
-            </button>
-          </form>
-          <span class="karma-score">${post.karma || 0}</span>
-          ${this.showDownvote ? `
-            <form method="POST" action="/api/posts/${post.id}/downvote" style="display: inline;">
-              <button type="submit" class="karma-button ${userReaction === 'dislike' ? 'active' : ''}" title="Downvote">
-                ↓
-              </button>
-            </form>
-          ` : ''}
-        </div>
-      `;
-      parts.push(karmaDisplay);
-    }
-    
-    return parts.length > 0 
-      ? `<div class="post-meta">${parts.join(' | ')}</div>`
-      : '';
-  }
-
-
 
   renderActions(post, user, baseUrl = '') {
     if (!user || user.role !== 'admin') {
