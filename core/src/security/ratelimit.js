@@ -68,3 +68,15 @@ export const apiLimiter = new RateLimiter({
   maxRequests: 60, // 60 requests per minute
   keyPrefix: 'rl:api:'
 });
+
+export const voteLimiter = new RateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: 10,           // 10 votes per hour
+  keyPrefix: 'rl:vote:'
+});
+
+export const commentLimiter = new RateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: 5,            // 5 comments per hour
+  keyPrefix: 'rl:comment:'
+});

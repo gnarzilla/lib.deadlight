@@ -203,10 +203,8 @@ export class FormValidator {
   }
 }
 
-// lib.deadlight/core/src/security/validation.js - Simplified CSRF
 export class CSRFProtection {
   static generateToken() {
-    // Simple random token
     return crypto.randomUUID();
   }
   
@@ -223,5 +221,46 @@ export class CSRFProtection {
     
     const match = cookieHeader.match(/csrf_token=([^;]+)/);
     return match ? match[1] : null;
+  }
+  
+  static setTokenCookie(response, token, maxAge = 3600) {
+    const cookie = `csrf_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
+    response.headers.append('Set-Cookie', cookie);
+    return response;
+  }
+  
+  static async validate(request, env) {
+    // Get token from cookie (server-side state)
+    const cookieToken = this.getTokenFromCookie(request);
+    if (!cookieToken) {
+      return false;
+    }
+    
+    // Get token from form/header (client-side submission)
+    let submittedToken;
+    
+    const contentType = request.headers.get('Content-Type') || '';
+    
+    if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
+      const formData = await request.clone().formData();
+      submittedToken = formData.get('csrf_token');
+    } else if (contentType.includes('application/json')) {
+      const body = await request.clone().json();
+      submittedToken = body.csrf_token;
+    } else {
+      submittedToken = request.headers.get('X-CSRF-Token');
+    }
+    
+    if (!submittedToken) {
+      return false;
+    }
+    
+    return cookieToken === submittedToken;
+  }
+  
+  static async generateAndSet(response) {
+    const token = this.generateToken();
+    this.setTokenCookie(response, token);
+    return token;
   }
 }

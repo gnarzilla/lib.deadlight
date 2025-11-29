@@ -91,13 +91,13 @@ export class PostModel extends BaseModel {
         values.push(published ? 1 : 0);
       }
       
-      // 🚨 ADD: Visibility update
+      // Visibility update
       if (visibility !== undefined) {
         updates.push('visibility = ?');
         values.push(visibility);
       }
 
-      // 🚨 ADD: Pinned update (for future implementation)
+      // Pinned update (for future implementation)
       if (pinned !== undefined) {
         updates.push('pinned = ?');
         values.push(pinned ? 1 : 0);
