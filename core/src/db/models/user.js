@@ -93,11 +93,26 @@ export class UserModel extends BaseModel {
     return await this.execute('DELETE FROM users WHERE id = ?', [userId]);
   }
 
-  async list({ limit = 50, offset = 0 } = {}) {
-    return await this.query(
-      'SELECT id, username, role, created_at, last_login FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      [limit, offset]
-    );
+  async list({ limit = 50, offset = 0, includeStats = false } = {}) {
+    let query = `
+      SELECT 
+        id, username, role, created_at, last_login
+        ${includeStats ? `,
+          (SELECT COUNT(p.id) FROM posts p 
+           WHERE p.author_id = users.id 
+             AND p.published = 1 
+             AND (p.is_email = 0 OR p.is_email IS NULL)) AS post_count,
+          (SELECT MAX(p.updated_at) FROM posts p 
+           WHERE p.author_id = users.id 
+             AND p.published = 1 
+             AND (p.is_email = 0 OR p.is_email IS NULL)) AS last_post
+        ` : ''}
+      FROM users 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `;
+    
+    return await this.query(query, [limit, offset]);
   }
 
   async count() {

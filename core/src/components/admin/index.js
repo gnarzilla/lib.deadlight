@@ -6,3 +6,4 @@ export { renderDeleteConfirmation } from './deletePost.js';
 export { renderAdminDashboard } from './dashboard.js';
 export { renderUserManagement } from './userManagement.js';
 export { renderSettings } from './settings.js'; 
+export { renderCommentList, renderAddCommentForm } from './comments.js';
