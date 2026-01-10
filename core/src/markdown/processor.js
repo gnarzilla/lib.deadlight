@@ -77,6 +77,15 @@ export class MarkdownProcessor {
       .trim();
   }
 
+  sanitizePlainText(text) {
+    // Use filterXSS for plain text - more comprehensive than manual escape
+    return filterXSS(text, {
+      whiteList: {},  // No tags allowed for plain text
+      stripIgnoreTag: true,
+      stripIgnoreTagBody: ['script']
+    });
+  }
+
   // Refined excerpt extraction with intra-paragraph truncation
   extractExcerpt(content, maxLength = 300) {
     // Check for manual excerpt marker first
@@ -186,3 +195,6 @@ export const defaultProcessor = new MarkdownProcessor();
 export function renderMarkdown(content) {
   return defaultProcessor.render(content);
 }
+
+// Export for reuse
+export const sanitizeHtml = (text) => defaultProcessor.sanitizePlainText(text);
