@@ -53,8 +53,10 @@ export function renderTemplate(title, bodyContent, user = null, config = null) {
       <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
       <link rel="stylesheet" href="/styles/theme.css?v=${cacheBust}">
       <link rel="stylesheet" href="/styles/dark_min.css?v=${cacheBust}" id="theme-stylesheet">
-
-      <!-- Add this inline style block -->
+      <meta name="theme-color" content="#1a1a1a">
+      <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+      <link rel="manifest" href="/manifest.json">
+      <meta name="referrer" content="strict-origin-when-cross-origin">
       <style>
         :root {
           --accent-color: ${accentColor};

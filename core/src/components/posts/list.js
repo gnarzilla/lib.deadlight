@@ -25,7 +25,6 @@ export class PostList {
       parts.push(new Date(post.created_at).toLocaleDateString());
     }
     
-    // Add karma display with upvote button
     if (this.showKarma && post.karma !== undefined) {
       const userReaction = post.user_reaction;
       
