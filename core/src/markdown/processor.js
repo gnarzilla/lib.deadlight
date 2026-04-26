@@ -36,7 +36,6 @@ export class MarkdownProcessor {
     
     this.renderer = new marked.Renderer();
     
-    // Fixed code renderer - handle the marked token properly
     this.renderer.code = (code, language, isEscaped) => {
       // If code is an object (marked v4+ token), extract the text
       const codeText = typeof code === 'object' && code !== null ? code.text : code;
