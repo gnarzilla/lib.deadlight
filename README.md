@@ -1,223 +1,201 @@
-# lib.deadlight - Shared Library for the Deadlight Ecosystem
+# lib.deadlight
 
-A modular, edge-native library providing authentication, database models, UI components, and core utilities for the Deadlight ecosystem of applications.
+Shared modules for the Deadlight ecosystem.
 
+`lib.deadlight` is the common library layer behind Deadlight projects: markdown rendering, authentication helpers, database utilities, UI components, and other small modules that are useful across edge-native apps.
 
-### Table of Contents
-1.  [Overview](#overview)
-2.  [Current Status](#current-status)
-3.  [Features](#core-features)
-4.  [Architecture](#architecture)
-6.  [Installation](#installation)
-7.  [Usage Examples](#usage-examples)
-8.  [Roadmap](#roadmap)
-9.  [License](#license)
-10.  [Documentation](#detailed-documentation) 
+The library currently exists mostly as code extracted from [`blog.deadlight`](https://github.com/gnarzilla/blog.deadlight), where the modules are actively used and hardened. Over time, it will become the shared foundation for `blog.deadlight`, `deadlight-proxy` integrations, and the upcoming `vault.deadlight` credential layer.
 
----
+## Status
 
-##  Overview
+This project is under active extraction and cleanup.
 
-lib.deadlight is the foundational shared library that powers the entire Deadlight ecosystem, including:
-- **blog.deadlight** - Minimalist blog platform
-- **comm.deadlight** - Communications suite (email client)
-- **proxy.deadlight** - Email proxy and API server
+Most modules began inside `blog.deadlight` and are being moved here as they become reusable. APIs may change while the ecosystem stabilizes.
 
-Built for Cloudflare Workers, this library ensures consistency, security, and code reuse across all Deadlight applications.
+Current practical use:
 
-## Current Status
+* Shared markdown rendering and excerpt handling for `blog.deadlight`
+* Authentication and session helpers used by Deadlight web/admin tools
+* Database model patterns for Cloudflare Workers + D1
+* Reusable post/list/pagination components
+* Early auth/security stubs intended to support `vault.deadlight`
 
-Production-Ready Modules
+## Deadlight Context
 
-####  **Authentication (`/core/src/auth/`)**
-- JWT token generation and validation
-- Secure password hashing with salt
-- User session management
-- Role-based access control
+Deadlight is an ecosystem for publishing, proxying, and routing across unpredictable networks.
 
-####  **Database (`/core/src/db/`)**
-- Base model class with error handling
-- D1 database integration
-- Models: User, Post, Settings
-- Migration support
+The stack has three broad layers:
 
-####  **Logging (`/core/src/logging/`)**
-- Structured logging with contexts
-- Multiple log levels
-- Cloudflare Workers compatible
+* **Transport:** `deadlight-proxy` and `deadmesh`
+* **Security:** `vault.deadlight`
+* **Application:** `blog.deadlight`
 
-####  **Markdown Processing (`/core/src/markdown/`)**
-- Full markdown support with marked.js
-- XSS protection via sanitization
-- Custom excerpt extraction
-- Manual excerpt markers (`<!--more-->`)
+`lib.deadlight` sits underneath those projects as the shared code layer. It is not meant to be a large framework; it is a small collection of practical modules that keep Deadlight projects consistent without forcing them into one monolith.
 
-####  **Components (`/core/src/components/`)**
-- **Posts**: List view, pagination, containers
-- Reusable across blog and email contexts
-- Theme-aware styling
+## Modules
 
-##  Installation
+### Markdown
+
+Markdown rendering and content helpers used by `blog.deadlight`.
+
+Planned/active responsibilities:
+
+* Markdown-to-HTML rendering
+* Excerpt extraction
+* Manual excerpt markers such as `<!--more-->`
+* Sanitization hooks
+* Small-footprint publishing utilities
+
+### Authentication
+
+Authentication helpers for Deadlight admin surfaces and future local-first tools.
+
+Current/planned responsibilities:
+
+* Password hashing helpers
+* Session/JWT utilities
+* Role checks for admin routes
+* Shared auth patterns for Workers-based apps
+* Early C stubs for future `vault.deadlight` integration
+
+### Database
+
+Database helpers and model patterns for Cloudflare D1-backed apps.
+
+Current/planned responsibilities:
+
+* Base model helpers
+* D1 query utilities
+* Common models for users, posts, and settings
+* Migration conventions
+
+### Components
+
+Small HTML rendering components used by Deadlight web projects.
+
+Current/planned responsibilities:
+
+* Post lists
+* Pagination
+* Content containers
+* Minimal theme-aware markup
+
+### Logging and Utilities
+
+Shared helpers for structured logging, request context, formatting, and other cross-project utilities.
+
+## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/lib.deadlight.git
+git clone https://github.com/gnarzilla/lib.deadlight.git
 cd lib.deadlight
-
-# Install dependencies
 npm install
 ```
 
-### Using in Your Project
+For local development with another Deadlight project:
 
 ```bash
-# Link locally for development
 cd lib.deadlight
 npm link
 
-cd ../your-project
+cd ../blog.deadlight
 npm link @deadlight/core
 ```
 
-##  Usage Examples
+Package names and exports are still stabilizing.
 
-### Authentication
+## Example Usage
+
+### Markdown
+
 ```javascript
-import { createJWT, verifyJWT } from '@deadlight/core/auth';
-import { UserModel } from '@deadlight/core/db/models';
+import { MarkdownProcessor } from '@deadlight/core/markdown';
 
-// Create a user
-const userModel = new UserModel(env.DB);
-const user = await userModel.create({
-  username: 'admin',
-  password: 'secure-password',
-  role: 'admin'
-});
+const processor = new MarkdownProcessor();
 
-// Generate JWT
-const token = await createJWT(
-  { id: user.id, username: user.username },
-  env.JWT_SECRET
-);
+const html = await processor.render('# Hello Deadlight');
 
-// Verify token
-const payload = await verifyJWT(token, env.JWT_SECRET);
+const excerpt = processor.extractExcerpt(markdown, 200);
 ```
 
 ### Database Models
+
 ```javascript
 import { PostModel } from '@deadlight/core/db/models';
 
-const postModel = new PostModel(env.DB);
+const posts = new PostModel(env.DB);
 
-// Create a post
-const post = await postModel.create({
-  title: 'Hello World',
-  content: 'This is my first post',
-  userId: 1
-});
-
-// Get paginated posts
-const { posts, pagination } = await postModel.getPaginated({
+const result = await posts.getPaginated({
   page: 1,
   limit: 10,
   includeAuthor: true
 });
 ```
 
-### Markdown Processing
+### Authentication
+
 ```javascript
-import { MarkdownProcessor } from '@deadlight/core/markdown';
+import { createJWT, verifyJWT } from '@deadlight/core/auth';
 
-const processor = new MarkdownProcessor();
+const token = await createJWT(
+  { id: user.id, username: user.username },
+  env.JWT_SECRET
+);
 
-// Render markdown to HTML
-const html = await processor.render('# Hello World\n\nThis is **bold**');
-
-// Extract excerpt
-const excerpt = processor.extractExcerpt(content, 200);
+const payload = await verifyJWT(token, env.JWT_SECRET);
 ```
 
-### Components
-```javascript
-import { PostList, Pagination } from '@deadlight/core/components/posts';
+## Repository Layout
 
-const postList = new PostList({
-  showAuthor: true,
-  showDate: true
-});
-
-const html = postList.render(posts, { user });
-```
-
-##  Architecture
-
-```
+```text
 lib.deadlight/
-├── core/src/
-│   ├── auth/               # Authentication & authorization
-│   ├── db/                 # Database models & base classes
-│   ├── logging/            # Structured logging
-│   ├── markdown/           # Markdown processing
-│   └── components/         # Reusable UI components
-│       └── posts/          # Post/content components
+└── core/
+    └── src/
+        ├── auth/        # Authentication/session helpers
+        ├── db/          # D1 models and database utilities
+        ├── logging/     # Shared logging helpers
+        ├── markdown/    # Markdown rendering and excerpts
+        ├── components/  # Small reusable HTML components
+        └── utils/       # Shared utility functions
 ```
 
-##  Roadmap
+## Roadmap
 
-### Phase 1: Security Hardening (Next Priority)
-- [ ] Rate limiting middleware
-- [ ] CSRF protection
-- [ ] Security headers
-- [ ] Input validation utilities
+### Near Term
 
-### Phase 2: Communication Components
-- [ ] Message containers (email rendering)
-- [ ] Thread view components
-- [ ] Attachment handling
-- [ ] Contact/address book components
+* [ ] Audit exports and remove stale APIs
+* [ ] Sync README examples with actual package paths
+* [ ] Document modules currently used by `blog.deadlight`
+* [ ] Add tests around markdown and auth helpers
+* [ ] Separate stable exports from experimental modules
 
-### Phase 3: Enhanced Authentication
-- [ ] Multi-device session management
-- [ ] Single Sign-On (SSO) across apps
-- [ ] Two-factor authentication
-- [ ] OAuth provider support
+### Vault Integration
 
-### Phase 4: Infrastructure
-- [ ] Service discovery
-- [ ] Event bus for inter-app communication
-- [ ] Shared configuration management
-- [ ] Health check endpoints
+* [ ] Identify auth/session modules that should move toward `vault.deadlight`
+* [ ] Expand C stubs where local credential storage requires native support
+* [ ] Define a clean JS/C boundary for offline-friendly credential workflows
+* [ ] Support local-first secrets without requiring network access
 
-### Future Considerations
-- [ ] WebSocket support for real-time features
-- [ ] Internationalization (i18n)
-- [ ] Theme system with CSS-in-JS
-- [ ] GraphQL schema generation from models
-- [ ] Automated testing framework
+### Ecosystem Reuse
 
-##  Development
+* [ ] Make shared components usable by multiple Deadlight web apps
+* [ ] Standardize D1 model conventions across Workers projects
+* [ ] Add common security headers and input validation helpers
+* [ ] Document integration patterns for `blog.deadlight` and future apps
 
-### Prerequisites
-- Node.js 16+
-- Cloudflare account
-- Wrangler CLI
+## Development
 
-##  Contributing
+Requirements:
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Follow the existing code style
-4. Add tests for new features
-5. Submit a pull request
+* Node.js 18+
+* npm
+* Wrangler CLI for Workers/D1 consumers
 
-##  License
+```bash
+npm install
+npm test
+```
 
-MIT License - See LICENSE file for details
+## License
 
----
-
-**Note:** This library is actively under development. While core modules are production-ready, new features are being added regularly. Check the commit history for the latest updates.
-
-For questions or support, please open an issue on GitHub.
+MIT License. See [LICENSE](LICENSE).
