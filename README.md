@@ -1,24 +1,66 @@
 # lib.deadlight
 
-Shared modules for the Deadlight ecosystem.
+Shared JS/C modules for the Deadlight ecosystem.
 
-`lib.deadlight` is the common library layer behind Deadlight projects: markdown rendering, authentication helpers, database utilities, UI components, and other small modules that are useful across edge-native apps.
+`lib.deadlight` is the common code layer used by Deadlight projects to avoid duplicating infrastructure across repos. It is currently required by [`blog.deadlight`](https://github.com/gnarzilla/blog.deadlight) and contains modules extracted from that project as they become reusable.
 
-The library currently exists mostly as code extracted from [`blog.deadlight`](https://github.com/gnarzilla/blog.deadlight), where the modules are actively used and hardened. Over time, it will become the shared foundation for `blog.deadlight`, `deadlight-proxy` integrations, and the upcoming `vault.deadlight` credential layer.
+This repository is public because Deadlight projects are public and depend on it. It is not yet a polished general-purpose framework; it is a practical shared library under active cleanup.
 
 ## Status
 
-This project is under active extraction and cleanup.
+Active extraction and stabilization.
 
-Most modules began inside `blog.deadlight` and are being moved here as they become reusable. APIs may change while the ecosystem stabilizes.
+The JavaScript modules are the most mature today and are primarily shaped by `blog.deadlight`. The native C modules are earlier-stage, but they reflect real reuse goals across `deadlight-proxy`, `deadmesh`, and the planned `vault.deadlight`.
 
-Current practical use:
+APIs may change while the library stabilizes.
 
-* Shared markdown rendering and excerpt handling for `blog.deadlight`
-* Authentication and session helpers used by Deadlight web/admin tools
-* Database model patterns for Cloudflare Workers + D1
-* Reusable post/list/pagination components
-* Early auth/security stubs intended to support `vault.deadlight`
+## What Lives Here
+
+```text
+lib.deadlight/
+├── core/       # JavaScript modules used by Workers/blog apps
+├── c/          # Native C modules and shared C experiments
+├── shared/     # Shared ecosystem config/schema experiments
+├── reference/  # Scratch notes and non-API reference material
+└── README.md
+```
+
+## JavaScript Core
+
+Located under `core/src/`.
+
+These modules currently support `blog.deadlight` and other Workers/D1-style Deadlight apps.
+
+Current areas:
+
+* `auth/` — JWT helpers, password hashing, auth errors
+* `components/` — reusable HTML/UI components for admin, auth, posts, and users
+* `db/` — D1 model helpers, migrations, and base model patterns
+* `logging/` — shared logger utilities
+* `markdown/` — markdown rendering and excerpt processing
+* `security/` — headers, middleware, rate limiting, and validation helpers
+* `utils/` — moderation, subdomain, template, and general utility helpers
+
+Dependencies include:
+
+* `marked` for markdown parsing
+* `xss` and `cssfilter` for sanitization
+* `commander` for CLI/helper tooling
+
+## Native C Modules
+
+Located under `c/`.
+
+These modules are earlier-stage, but they point toward shared native infrastructure across the ecosystem.
+
+Current areas:
+
+* `auth/` — auth-related headers/stubs for future native credential work
+* `network/` — shared networking primitives, currently including `connection_pool.c`
+
+The connection pool module was extracted because `deadmesh` began as a fork of `deadlight-proxy`, and the two projects share native networking code. `lib.deadlight` is the intended home for modules that should not remain duplicated across both projects.
+
+The C modules are not yet a stable public C API.
 
 ## Deadlight Context
 
@@ -30,59 +72,7 @@ The stack has three broad layers:
 * **Security:** `vault.deadlight`
 * **Application:** `blog.deadlight`
 
-`lib.deadlight` sits underneath those projects as the shared code layer. It is not meant to be a large framework; it is a small collection of practical modules that keep Deadlight projects consistent without forcing them into one monolith.
-
-## Modules
-
-### Markdown
-
-Markdown rendering and content helpers used by `blog.deadlight`.
-
-Planned/active responsibilities:
-
-* Markdown-to-HTML rendering
-* Excerpt extraction
-* Manual excerpt markers such as `<!--more-->`
-* Sanitization hooks
-* Small-footprint publishing utilities
-
-### Authentication
-
-Authentication helpers for Deadlight admin surfaces and future local-first tools.
-
-Current/planned responsibilities:
-
-* Password hashing helpers
-* Session/JWT utilities
-* Role checks for admin routes
-* Shared auth patterns for Workers-based apps
-* Early C stubs for future `vault.deadlight` integration
-
-### Database
-
-Database helpers and model patterns for Cloudflare D1-backed apps.
-
-Current/planned responsibilities:
-
-* Base model helpers
-* D1 query utilities
-* Common models for users, posts, and settings
-* Migration conventions
-
-### Components
-
-Small HTML rendering components used by Deadlight web projects.
-
-Current/planned responsibilities:
-
-* Post lists
-* Pagination
-* Content containers
-* Minimal theme-aware markup
-
-### Logging and Utilities
-
-Shared helpers for structured logging, request context, formatting, and other cross-project utilities.
+`lib.deadlight` sits underneath those projects as the shared module layer. Code is moved here when reuse becomes real, not just theoretical.
 
 ## Installation
 
@@ -92,7 +82,7 @@ cd lib.deadlight
 npm install
 ```
 
-For local development with another Deadlight project:
+For local development with `blog.deadlight`:
 
 ```bash
 cd lib.deadlight
@@ -104,97 +94,38 @@ npm link @deadlight/core
 
 Package names and exports are still stabilizing.
 
-## Example Usage
+## Development Notes
 
-### Markdown
+Some files in `reference/` are scratch material, design notes, or context used during development. They are not part of the public API.
 
-```javascript
-import { MarkdownProcessor } from '@deadlight/core/markdown';
+If a module is under `core/src/`, it is part of the JavaScript library surface or moving toward that role.
 
-const processor = new MarkdownProcessor();
-
-const html = await processor.render('# Hello Deadlight');
-
-const excerpt = processor.extractExcerpt(markdown, 200);
-```
-
-### Database Models
-
-```javascript
-import { PostModel } from '@deadlight/core/db/models';
-
-const posts = new PostModel(env.DB);
-
-const result = await posts.getPaginated({
-  page: 1,
-  limit: 10,
-  includeAuthor: true
-});
-```
-
-### Authentication
-
-```javascript
-import { createJWT, verifyJWT } from '@deadlight/core/auth';
-
-const token = await createJWT(
-  { id: user.id, username: user.username },
-  env.JWT_SECRET
-);
-
-const payload = await verifyJWT(token, env.JWT_SECRET);
-```
-
-## Repository Layout
-
-```text
-lib.deadlight/
-└── core/
-    └── src/
-        ├── auth/        # Authentication/session helpers
-        ├── db/          # D1 models and database utilities
-        ├── logging/     # Shared logging helpers
-        ├── markdown/    # Markdown rendering and excerpts
-        ├── components/  # Small reusable HTML components
-        └── utils/       # Shared utility functions
-```
+If a module is under `c/`, treat it as native shared infrastructure under active development unless documented otherwise.
 
 ## Roadmap
 
 ### Near Term
 
-* [ ] Audit exports and remove stale APIs
-* [ ] Sync README examples with actual package paths
-* [ ] Document modules currently used by `blog.deadlight`
-* [ ] Add tests around markdown and auth helpers
-* [ ] Separate stable exports from experimental modules
+* [ ] Audit actual exports and update examples accordingly
+* [ ] Document which modules are currently consumed by `blog.deadlight`
+* [ ] Remove or relocate stale scratch files
+* [ ] Add tests for markdown processing
+* [ ] Add tests for auth/password helpers
+* [ ] Clarify package names and import paths
 
-### Vault Integration
+### Native Shared Code
 
-* [ ] Identify auth/session modules that should move toward `vault.deadlight`
-* [ ] Expand C stubs where local credential storage requires native support
-* [ ] Define a clean JS/C boundary for offline-friendly credential workflows
-* [ ] Support local-first secrets without requiring network access
+* [ ] Decide which `deadlight-proxy` / `deadmesh` modules belong in `lib.deadlight`
+* [ ] Stabilize `c/network/connection_pool`
+* [ ] Expand native auth primitives only where needed by `vault.deadlight`
+* [ ] Define the JS/C boundary for local credential workflows
 
 ### Ecosystem Reuse
 
-* [ ] Make shared components usable by multiple Deadlight web apps
 * [ ] Standardize D1 model conventions across Workers projects
-* [ ] Add common security headers and input validation helpers
-* [ ] Document integration patterns for `blog.deadlight` and future apps
-
-## Development
-
-Requirements:
-
-* Node.js 18+
-* npm
-* Wrangler CLI for Workers/D1 consumers
-
-```bash
-npm install
-npm test
-```
+* [ ] Document security middleware usage
+* [ ] Share common admin/auth components across Deadlight web apps
+* [ ] Keep `lib.deadlight` small enough to remain useful outside a monolith
 
 ## License
 
