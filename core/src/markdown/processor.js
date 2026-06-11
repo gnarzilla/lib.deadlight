@@ -20,6 +20,7 @@ export class MarkdownProcessor {
         strong: [], em: [], del: [],
         ul: [], ol: [], li: [],
         code: ['class'], 
+        img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
         pre: [],
         blockquote: [],
         table: [], thead: [], tbody: [], tr: [], th: [], td: []
