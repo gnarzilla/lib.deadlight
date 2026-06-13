@@ -18,6 +18,7 @@ APIs may change while the library stabilizes.
 
 ```text
 lib.deadlight/
+├── build/      # Android ARM64 16 KB Native Bundle
 ├── core/       # JavaScript modules used by Workers/blog apps
 ├── c/          # Native C modules and shared C experiments
 ├── shared/     # Shared ecosystem config/schema experiments
